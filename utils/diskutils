@@ -1,0 +1,46 @@
+lsblk
+blkid
+lsusb [-v]
+sudo ncdu [target] [-x{exclude external mounted devices}]
+mkfs*
+fdisk
+df -h
+gparted
+mount
+umounto
+fsck <fileystem checker>
+exfat-utils <package>
+
+
+lspci
+
+-- Auto mouting during the boot time.
+sudo vim /etc/fstab
+-- Systemctl daemon-reload < for changes to take place >
+-- defaults - varies according to the distribution of your choice.
+-- UUID - Universally Unique User ID.
+sudo blkid - Get information about all block devices.
+-- DON'T USE STATIC NAMES.
+
+-- In debian based systems, 
+rw,suid,dev,exec,auto,nouser,async
+-- Other options
+ro[read-only],noauto
+-- ro is better in most cases.
+
+device_identifier mount_target filesystem_type options_for_volume dump order_of_fs_integrity_checking
+UUID=<alphanumeric> /mnt/flash exfat defaults[,noauto] 0 2
+-- /dev/sda /mnt/flash exfat defaults 0 2 - No recommended at all.
+
+noauto - Disabling Automatic mounting of the volume. 
+0 - Means that the fsck will not check this storage volume.
+-- Using noauto option can be useful since
+-- 1. It lets you simplify mounting.
+-- 2. It creates a deterministic mountpoint.
+sudo mount /mnt/flash ==> sudo mount /dev/sdX /mnt/flash
+
+-- Checking if the file has common errors.
+sudo mount -a[all] -sda  Not to completely trust, but just another test.
+
+sudo mount /mnt/e
+stderr - Can't find /mnt/e in /etc/fstab

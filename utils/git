@@ -1,0 +1,16 @@
+git remote add origin <url> - origin is the remote repo name.
+
+git push origin -u master <add branch branch master to remote>
+<-u : set the current local branch to track this current created remote branch>
+
+git push origin --delete branch-nm-remote
+
+git push origin HEAD
+
+git pull --allow-unrelated-histories
+
+git pull remotename
+
+git remote set-url remotename <url>
+
+git branch -m oldname newname

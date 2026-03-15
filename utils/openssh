@@ -1,0 +1,150 @@
+SSH - Secure Shell.
+
+-- A Remote management tool. Suite of binaries [ ssh sshd ssh-add ssh-agent ssh-copy-id ].
+sudo pacman -S openssh
+-- SSH protocol implementation for remote login, command execution and file transfer.
+-- Depends on OpenSSL - toolkit for SSL and TLS.
+-- Listens to port 22 by default.
+
+-- Unit file operations.
+systemctl <enable/disable/start/stop/restart> sshd
+
+Service file @: /usr/lib/systemd/system/sshd.service
+Config files @: ~/.ssh/
+~/.ssh/authorized_keys - A file that contains the public of the clients.
+
+-- In the client.
+Running the ssh-agent and adding the key, can help in remote login without passphrases being asked again and again. 
+
+-- Connecting to a remote server.
+ssh -p <port_number|d:22> user@remote_host_name_or_ip
+Changing the port number is a simple security increment. 
+
+
+-- SSH Client Binary.
+SSH client - /usr/bin/ssh
+An ssh client allows you to connect to a remote server and not the other way around.
+Remote server has a host-key[fingerprint]
+
+It's stored in the known_hosts file.
+To avoid MITM attacks.
+
+/var/log/auth.log to troubleshoot ssh login.
+
+-- Configuring SSH client.
+touch ~/.ssh/config
+
+Host <foo>
+    Hostname <ip addr of the host>
+    Port 22
+    User <username in the host>
+:wq
+ssh foo - connect to the host with name 'foo' in the config file.
+
+-- SSH keys
+Avoid having to type the password.
+If you fail the key, will ask the password. But can be disabled.
+
+id_ed25519 id_ed25519.pub - Example of files that contain the public and the private ssh key.
+
+ssh-keygen - creates a public private (rsa) key pair
+ssh-keygen -t ed25519 -C "your comment/default: clientusername@hostname"
+
+-- Note: Enter a passphrase for a generated key.
+The passphrase is asked locally when the private key is used. This way even if you lose the key, they would need the passphrase to actually use it.
+    
+    Look if you are overwriting the same file. If you do so, you may lose the ability to remotely connect to the server.
+    
+    If the private key has leaked out. Stop using that is the servers.
+
+Add the public key<client side> to the server-end<host> and it can be used by the host to authenticate that it's you trying to connect remotely. 
+If the private key <of client> is the right one for the public key in the remote server, you are logged in.
+
+To put in .ssh/authorized_keys file in the remote server.
+
+ssh -v user@ip
+
+The host looks for match with every private key in the client and if it matches it logs in as the user.
+
+-- Copying the public key of the client into the remote server.
+1. Manually copy the keyfile.pub contents into authorized_keys file in the remote.
+2. Use ssh-copy-id -i[input file in client] ~/.ssh/inclient.pub user@remote_ip
+
+
+-- Managing keys.
+-- Keys are specific to users. If pushed the public key to the user, you can't login in as root with that key.
+-- If you have many clients, it is advised to generate a pair for each client. 
+
+If you give the same public key to every one of your client. If the private key leaks, all of them will have compromised keys.
+
+-- Disabling password authentication and only allowing cryptographic authentication.
+
+Using a specific ssh key for remote login.
+
+ssh -i[input file] ~/.ssh/client_pri_key user@remote_hostname.
+-- Since the remote has the public key, it can verify the authenticity of the client.
+
+-- Using ssh-agents
+SSH agents are automatically started in most desktop linux distros.
+But in case of a bare server/minimal installation, you will have to enable it.
+
+SSH agents allows the client to give the passphrase once and use it for the whole session
+i.e until you close the attached terminal.
+
+In the client, perform the follow steps.
+eval "$(ssh-agent)" [ confirm by running ps aux | grep ssh-agent ]
+ssh-add path_to_private_key - this asks for the passphrase once and then stores it into the memory in client.
+  This skips the need of the user to input the passphrase every time. 
+
+
+
+
+-- SSH Server binary.
+/usr/bin/sshd - A daemon that runs in the background which accepts connections.
+
+-- In Debian based systems, systemctl status ssh.
+
+Checking the status using systemd[init system] - systemctl status sshd
+systemctl stop sshd - Terminates the daemon, but maintains the current connections.
+
+/etc/ssh/ - Has config files, host-keys.
+So, if you clone your machine, the host-keys will be cloned with the rest of the filesystem, remember to change them.
+
+/etc/ssh/ssh_config - A configuration file for SSH, the local ~/.ssh/config overrides it.
+
+/etc/ssh/sshd_config - A file that has configurations for how it handles remote connections.
+If you add PasswordAuthentication no - Then you have to login using the ssh-agent. It doesn't even allow you to enter passphrase while login.
+Also, you can't even push the public key using ssh-copy-id if configured to no.
+
+  -- IMPORTANT: 
+    1. PasswordAuthentication no - After you have successfully established a key relationship with the remote server.
+    2. Port XYZ - To change the port number.
+    3. PermitRootLogin no - If you have a non-root user to use<Recommended>.
+
+-- Troubleshooting OpenSSH
+A timeout means that the port has been blocked. [ The firewall just blocks it. No other info is given. ]
+For security reasons, the hacker must not know what actually blocked the ssh request
+    1. Was the port not listening?
+    2. Is the firewall blocking my request?
+    3. Am I not able to connect to the internet?
+    4. Is the service down?
+    5. Is the service running listening to SSH on a different port? 
+
+Permissions in both client and remote server:
+    1. Public key readable by anyone. 
+    2. Private key only by the owner.
+    3. ~/.ssh rwx only for the user.
+
+Log files.
+    1. tail -f /var/log/auth.log[debian] - If a user has a problem, tail and troubleshoot only.
+    2. Follow journalctl [ systems using systemd ]  
+        journalctl -u[unit name] -f[follow] sshd
+
+
+-- Root
+All of roots ssh files can be found in /etc/ssh and root/.ssh
+
+All the files in /etc/ssh is owned by the root.
+
+For the first time you have to enable password auth for ssh, push the public key of the client into authorized_keys.
+Then, change to either no/prohibit-password, restart the daemon and then use it to login as the root to the remote server. 
