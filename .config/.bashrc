@@ -35,8 +35,12 @@ alias bthctl='bluetoothctl'
 
 help() {
     echo "Functions: "
-    echo -e "\tvol x - Set volume of the default sink to x%"
     echo -e "\tbcon - Connect the first bluetooth device"
+    echo -e "\tbat - Simple battery info into the terminal"
+    echo -e "\tvol x - Set volume of the default sink to x%"
+
+    echo -e "\nScripts (/usr/local/bin)"
+    echo -e "\tcstart x - start charging when battery drops below x"
 }
 vol() {
     if [ -z "$1" ]; then
@@ -47,6 +51,7 @@ vol() {
 
     # pactl set-sink-volume sinkname x%
 }
+# Connect bluetooth earpods.
 bcon() {
     if command -v bluetoothctl &>/dev/null; then
         device=$(echo "devices" | bluetoothctl | grep Device | cut -d' ' -f2)
@@ -55,7 +60,25 @@ bcon() {
         echo "/usr/bin/bluetoothctl: not found. Install using your package manager!"
     fi
 }
+# Battery info on the terminal.
+bat() {
+    if [ -d /sys/class/power_supply/BAT0 ]; then
+        wd=/sys/class/power_supply/BAT0
+        printf "Status: "
+        cat $wd/status
 
+        printf "Charge: "
+        cat $wd/capacity
+
+        printf "Cycles Elapsed: "
+        cat $wd/cycle_count
+
+        printf "Charge control start threshold: "
+        cat $wd/charge_control_start_threshold
+    else
+        echo "Couldn't access the required files"
+    fi
+}
 PS1='\e[31m[\u@\h \w]\$ >> \e[0m'
 
 set -o noclobber
