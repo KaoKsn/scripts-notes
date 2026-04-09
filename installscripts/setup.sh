@@ -242,8 +242,11 @@ setup_dirvers () {
 }
 
 install_essentials() {
-    pacman -S networkmanager git openssh e2fsprogs dosfstools base-devel mtools neovim ncdu cronie pciutils docker
+    pacman -S networkmanager openssh e2fsprogs dosfstools mtools neovim ncdu cronie pciutils docker
     systemctl enable NetworkManager
+
+    # Build tools.
+    pacman -S cmake curl ninja base-devel git
 
     echo
     read -p "Enable sshd during system startup? (y/n): " choice
