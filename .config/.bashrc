@@ -11,6 +11,7 @@ HISTTIMEFORMAT="[%Y-%m-%d] [%T]  "
 HISTCONTROL=ignoreboth
 
 alias ls='ls --color=auto'
+alias ts='/usr/bin/tailscale'
 alias sl=ls
 alias grep='grep --color=auto'
 alias vim='/usr/bin/nvim'
