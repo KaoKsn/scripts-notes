@@ -6,57 +6,92 @@
 [[ $- != *i* ]] && return
 
 HISTTIMEFORMAT="[%Y-%m-%d] [%T]  "
-
-# Don't enter commands into the history that start with a space
+# Don't record commands that start with a space.
 HISTCONTROL=ignoreboth
 
-alias ls='ls --color=auto'
-alias ts='/usr/bin/tailscale'
-alias sl=ls
-alias grep='grep --color=auto'
-alias vim='/usr/bin/nvim'
-alias vi=vim
-alias sqlite='/usr/bin/sqlite3'
+# Core aliases
 alias gcc='/usr/bin/gcc -pedantic -Wall -Wextra -g -O2'
-alias ping='ping -c3 ping.archlinux.org'
-alias ccs='codecrafters submit'
-alias gpp=g++
-alias pvpn=/usr/bin/protonvpn-app
-alias signal='signal-desktop --password-wallet="kwallet6"'
-alias ncli='nmcli'
-
-alias rm='trash -v' # Safer use.
-alias st='speedtest-cli --secure'
+alias gp=g++
+alias grep='grep --color=auto'
+alias ls='ls --color=auto'
 alias ll='ls -lFh'
 alias la='ls -Fah'
 alias lla='ls -lFah'
-alias z='zoxide'
+alias ncli='nmcli'
+alias ping='ping -c3 ping.archlinux.org'
+alias sl=ls
+alias vi=vim
+if [ -f /usr/bin/zoxide ]; then
+    alias cd=z
+    eval "$(zoxide init bash)"
+fi
 
+if [ -f /usr/bin/nvim ]; then
+    alias vim='/usr/bin/nvim'
+else
+    alias vim='/usr/bin/vi'
+fi
+
+# Safety aliases.
+if [ -f /usr/bin/trash ]; then
+    alias rm='trash -v'
+else
+    alias rm='rm -i'
+fi
+alias cp='cp -iv'
+alias mv='mv -iv'
+
+# Application aliases.
+alias ts='/usr/bin/tailscale'
+alias sqlite='/usr/bin/sqlite3'
+alias pvpn=/usr/bin/protonvpn-app
+alias signal='signal-desktop --password-wallet="kwallet6"'
+alias st='speedtest-cli --secure'
 alias bthctl='bluetoothctl'
 
 help() {
     echo "Functions: "
-    echo -e "\tbcon - Connect the first bluetooth device"
+    echo -e "\tbcon 1/0 - Connect the first bluetooth device"
     echo -e "\tbat - Simple battery info into the terminal"
     echo -e "\tvol x - Set volume of the default sink to x%"
 
     echo -e "\nScripts (/usr/local/bin)"
     echo -e "\tcstart x - start charging when battery drops below x"
 }
+# Manager volume of the current default sink in command line.
 vol() {
     if [ -z "$1" ]; then
         echo "Usage: vol <percentage>"
         return 1
     fi
-    pactl set-sink-volume @DEFAULT_SINK@ "$1%"
-
-    # pactl set-sink-volume sinkname x%
+    if [ -f /usr/bin/pactl ]; then
+        pactl set-sink-volume @DEFAULT_SINK@ "$1%"
+    else
+        echo -e "Looks like you don't have pactl.\n\tInstall either pulseaudio or pipewire!"
+    fi
 }
-# Connect bluetooth earpods.
+# Bluetooth Devices
 bcon() {
     if command -v bluetoothctl &>/dev/null; then
-        device=$(echo "devices" | bluetoothctl | grep Device | cut -d' ' -f2)
-        echo "connect $device" | bluetoothctl
+        # Default to connect.
+        if [ -z "$1" ]; then
+            device=$(echo "devices" | bluetoothctl | grep Device | cut -d' ' -f2)
+            echo "connect $device" | bluetoothctl
+        else
+            case "$1" in
+            0)
+                echo "disconnect" | bluetoothctl 2>/dev/null
+                ;;
+            1)
+                device=$(echo "devices" | bluetoothctl | grep Device | cut -d' ' -f2)
+                echo "connect $device" | bluetoothctl
+                ;;
+            *)
+                echo "bcon 0 - Disconnect"
+                echo "bcon [1] - Connect"
+                ;;
+            esac
+        fi
     else
         echo "/usr/bin/bluetoothctl: not found. Install using your package manager!"
     fi
@@ -80,9 +115,14 @@ bat() {
         echo "Couldn't access the required files"
     fi
 }
+
+# Prompt
 PS1='\e[31m[\u@\h \w]\$ >> \e[0m'
 
 set -o noclobber
 
-export EDITOR=/usr/bin/nvim
+if [ -f /usr/bin/nvim ]; then
+    export EDITOR=/usr/bin/nvim
+fi
+
 . "$HOME/.cargo/env"
