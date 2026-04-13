@@ -1,0 +1,75 @@
+NGINX - Reverse Proxy, Load Balancer, Web Server.
+    Documentation @(https://nginx.org/en/docs)
+
+Binary Installation (/usr/bin/nginx)
+    sudo pacman -S nginx
+    sudo apt install nginx
+
+As a SYSTEMD service
+    Unit file:
+        /usr/lib/systemd/system/nginx.service
+
+    systemctl (enable|disable|start|stop|restart|status) nginx
+
+    systemctl edit nginx.service
+        /etc/systemd/system/nginx.service.d/override.conf
+        # Allow 'x' restarts in an interval of 'y' sec before considering the service to have failed.
+        StartLimitBurst=x
+        StartLimitInterval=y
+        Restart=(on-failure|always)     # NOTE: Can cause start-limit-hit
+
+        systemctl reset-failed nginx.service
+
+sudo nginx
+sudo nginx -s (reload|stop|quit|reopen)
+
+Configuration files:
+    /etc/nginx/nginx.conf
+    /etc/nginx/sites-enabled/*
+    /etc/nginx/conf.d/*
+
+Basic configuration:
+    Modules configured using directives. (/etc/nginx/modules.d/)
+
+    http directive is a part of the `main` context.
+    http { # Context
+            server { # Context
+                    listen port;
+                    server_name name; # Simple directive.
+
+                    location / { # Block directive
+                            root /usr/share/nginx/html;
+                            index index.html index.htm;
+                    }
+            }
+    }
+
+Setting NGINX as a proxy server.
+    http {
+            # Proxy @localhost port 80.
+            server {
+                    listen 80;
+                    server_name subdomain.domain.tld;
+                    # server_name localhost;
+                    # server_name git.kernel.org;
+
+                    location / {
+                            proxy_pass http://localhost:8080;
+                            # proxy_pass    protocol://fqdn:port;
+                    }
+                    location ~ \.(gif|png|jpg|bmp) {
+                            root /usr/share/nginx/images;
+                    }
+                    # Regex is always preceeded with a `~`
+            }
+
+            # Proxied server localhost:8080.
+            server {
+                    listen 8080;
+                    server_name localhost;
+
+                    root /usr/share/nginx/html;
+                    location / {
+                    }
+            }
+    }
