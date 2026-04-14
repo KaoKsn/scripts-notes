@@ -48,6 +48,8 @@ alias pvpn=/usr/bin/protonvpn-app
 alias signal='signal-desktop --password-wallet="kwallet6"'
 alias st='speedtest-cli --secure'
 alias bthctl='bluetoothctl'
+alias valgrind='valgrind --track-origins=yes --leak-check=full -s'
+alias gdb='gdb -tui'
 
 help() {
     echo "Functions: "
