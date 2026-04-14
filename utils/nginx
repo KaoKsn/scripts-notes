@@ -28,11 +28,25 @@ Configuration files:
     /etc/nginx/sites-enabled/*
     /etc/nginx/conf.d/*
 
+Log files:
+    /var/log/nginx/access.log
+
+PID file:    
+
+/run/nginx.pid - PID of the master process.
+
 Basic configuration:
     Modules configured using directives. (/etc/nginx/modules.d/)
 
+    events {
+            worker_processes 1024;
+    }
     http directive is a part of the `main` context.
     http { # Context
+            types {
+                    text/html   html;
+                    text/css    css;
+            }
             server { # Context
                     listen port;
                     server_name name; # Simple directive.
@@ -73,3 +87,43 @@ Setting NGINX as a proxy server.
                     }
             }
     }
+
+Other directives.
+    * Comments included *
+    http {
+            include /etc/nginx/mime.types;
+
+            include /etc/nginx/sites-enabled;
+
+            access_log  /var/log/nginx/access.log
+
+            location /dir404 {
+                alias path_to_dir_that_does_exist;
+                http://localhost:port/dir404; - serves index.html present in the path that is set as alias.
+            }
+
+            /usr/share/nginx
+                    - /usr/share/nginx/git
+                        - git.html
+                    - index.html
+            location /git {
+                root /usr/share/nginx;
+                try_files /git/git.html /index.html =404;
+            }
+    }
+
+    user username;
+
+Redirections and Rewrites
+
+    location /tothispath {
+            alias /usr/share/nginx/;
+    }
+    location /redirectthis {
+            return 307 /tothispath;
+    }
+        Now, http://localhost:80/redirectthis serves the index.html inside /usr/share/nginx/
+
+    Rewrites
+    rewrite ^/number/(\w+) /count/$1;
+    http://localhost/number/9 remains number/9 but you are redirected to the page in context /count/$1
