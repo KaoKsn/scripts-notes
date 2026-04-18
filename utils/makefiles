@@ -1,0 +1,120 @@
+GNU Make - C/C++ Build Tool
+Binary Installation: 
+	sudo pacman -S make
+
+makefile/Makefile <only allowed names>
+
+$@ : all the targets.
+$^ : all the dependencies.
+$? : all the prerequisites newer than the target.
+$<: first prerequisite.
+% : wilcard
+* : wildcard
+
+varname = value
+$(varname) - use value.
+
+A rule looks something like this.
+target: dependencies
+	steps to generate the target. <indentations mandatory>
+
+```make
+	# Comments. A simple makefile
+	CC = gcc
+	OPT = -01
+	CFLAGS = -Wall -Wextra -pedantic $(OPT) -g
+
+
+	BINARY = main
+	OBJECTS = stack.o vm.o
+
+	all: $(BINARY)
+
+	$(BINARY): $(OBJECTS)
+		$(CC) $^ -o $@
+
+	%.o: %.c
+		$(CC) $(CFLAGS) $^ -c -o $@
+
+	clean:
+		rm -rf $(BINARY) $(OBJECTS)
+		@echo "cleansed!"
+		# @ - just execute and not the echo the command itself to stdout.
+```
+
+user@host $ make (builds the first target by default).
+user@host $ make clean (build a specific target).
+
+
+featureful makefile.
+
+Include directories, dependency flags, source code directories.
+Loops.
+
+dependency flags in gcc:
+	-MP -MD => gcc includes clues for makefiles to know dependencies in source code.
+
+Loops:
+	$(foreach D,$(INCLUDEDIRS), -I$(D))
+
+Pattern Substitution:
+	patsubst
+```make
+	BINARY = bin
+	CODEDIRS = . ./lib
+	INCDIRS = . ./include/
+
+	CC = gcc
+	OPT = -O0
+
+	DEPFLAGS = -MP -MD
+
+	CFLAGS = -Wall -Wextra -pedantic -g $(DEPFLAGS) $(OPT) $(foreach D,$(INCDIRS),-I$(D))
+
+	CFILES = $(foreach D, $(CODEDIRS),$(wilcard $(D)/*.c))
+
+	OBJECTS = $(patsubst %.c, %.o, $(CFILES))
+	DEPFILES = $(patsubst %.c, %.d, $(CFILES))
+
+	all: $(BINARY)
+
+	$(BINARY): $(OBJECTS)
+		@$(CC) $^ -o $@
+
+	%.o: %.c
+		@$(CC) $(CFLAGS) $^ -o $@
+
+	clean:
+		@rm -rf *.o *.s *.asm *.d $(BINARY) *.tar.gz
+
+	diff:
+		@git status
+		@git diff --stat
+	
+	distribute: clean
+		@tar cvzf dist.tar.gz *
+```
+
+/usr/bin/gcc: 
+	echo $(dir $@) # echoes /usr/bin
+Notes:
+	1. Don't use * directly in variable definitions.
+		If it fails, it literally becomes the value of the variable.
+		wvar := *.o
+		wtarget: *.o
+		right := $(wildcard *.o)
+
+
+:: Implicit Rules :: 
+CC = gcc # Flag for implicit rules
+CFLAGS = -g # Flag for implicit rules. Turn on debug info
+
+# Implicit rule #1: blah is built via the C linker implicit rule
+# Implicit rule #2: blah.o is built via the C compilation implicit rule, because blah.c exists
+blah: blah.o
+
+blah.c:
+	echo "int main() { return 0; }" > blah.c
+
+clean:
+	rm -f blah*
