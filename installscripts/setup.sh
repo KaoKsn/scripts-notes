@@ -158,6 +158,8 @@ chroot_n_config() {
     ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
     hwclock --systohc
 
+    timedatectl set-ntp 1
+
     echo -e "\nGenerating locales...\n"
     cat /etc/locale.gen | grep "en_US-UTF-8 UTF-8" | sed -i 's/#//g'
     locale-gen
