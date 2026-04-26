@@ -118,9 +118,6 @@ bat() {
     fi
 }
 
-# Prompt
-PS1='\e[31m[\u@\h \w]\$ >> \e[0m'
-
 set -o noclobber
 
 if [ -f /usr/bin/nvim ]; then
@@ -128,3 +125,14 @@ if [ -f /usr/bin/nvim ]; then
 fi
 
 . "$HOME/.cargo/env"
+
+git_branch() {
+    branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || return
+    if [ -z "$branch" ]; then
+        return
+    else
+        echo " {$branch}"
+    fi
+}
+
+PS1='[\u@\h] (\w)$(git_branch) \$ >> '
