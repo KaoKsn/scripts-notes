@@ -77,6 +77,8 @@ sed -e 's/^[[:space:]]*#*[[:space:]]*PermitRootLogin[[:space:]]\+.*/PermitRootLo
     -e 's/^[[:space:]]*#*[[:space:]]*PasswordAuthentication[[:space:]]\+.*/PasswordAuthentication no/i' \
     "$sshconf" >"$tmp"
 
+truncate -s 0 /etc/ssh/sshd_config.d/*
+
 chmod --reference="$sshconf" "$tmp" 2>/dev/null || true
 chown --reference="$sshconf" "$tmp" 2>/dev/null || true
 mv "$tmp" "$sshconf"
