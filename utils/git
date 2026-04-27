@@ -14,3 +14,75 @@ git pull remotename
 git remote set-url remotename <url>
 
 git branch -m oldname newname
+
+-- NOTES
+
+Merging
+
+fast forward merge - the tip of the branch we are merging onto is the merge base
+    - base branch now points to the last commit has of the branched branch
+
+a - b - c (main) <mergebase>
+         \
+          d - e (feature)
+
+git switch main; git merge feature;
+
+a - b - c - d - e (main, feature)
+
+------
+
+Rebasing - as the name suggests, changing the merge base of  the target branch.
+This means that the commit hash of every commit in the target branch is now going to change because every commit was created
+with the mergebase in mind!
+
+a - b - c <mergebase> - f - g - h(main)
+         \
+          d - e (feature)
+
+git switch feature; git rebase main
+a - b - c - f - g - h (main) <new mergebase> - d - e (feature)
+    You can now perform a fastforward merge (Important!, feature branch still hasn't been merged into main)
+
+Rebasing a public branch is bad! (Rebase your branch on top of a public branch)
+{
+    What would happen if you did (!! Do not do this !!)
+        git switch main; git rebase feature
+
+    a - b - c (main)
+            \
+            d - e (feature)
+    a - b - c - d - e (main, feature)
+
+    a - b - c - d - e - f - h (main)<mergecommit>
+                     \     /
+                       g(feature)
+}
+
+Also is there a fastforward rebase. (current feature branch is upto date.)
+
+----
+
+Reset
+git reset --soft commitish - Get back to a previous commit but retain the changes.
+Committed changes will be put in the staging area, uncommitted remain staged or unstaged as before.
+
+git reset --hard commitish - Get back to a previous commit and remove uncommited, commited changes(up until that point.
+
+
+------
+
+Reflogs
+
+
+
+
+
+
+
+------
+
+Merge/ Rebase conflicts
+
+    git checkout --theirs file - <accept their changes>
+    git checkout --ours file - <Keep our changes>
