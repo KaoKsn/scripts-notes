@@ -13,7 +13,7 @@ apt update -y && apt dist-upgrade -y
 
 ########### Package Installation ###############
 printf "\n\nInstalling base packages....\n"
-apt install curl git build-essential ncdu tmux vim zoxide -y
+apt install curl git build-essential ncdu tmux vim zoxide htop fzf -y
 echo 'eval "$(zoxide init --cmd cd bash)' >>/root/.bashrc
 
 printf "\n\nSetting fail2ban...\n"

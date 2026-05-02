@@ -1,0 +1,79 @@
+Compile. Include symbolic debugging information.
+gcc -g file.c <-o execfile>
+main: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=895926d15b9596490cb43c307449f377e42ae5dd, for GNU/Linux 4.4.0, (with debug_info), not stripped
+
+Start in GUI mode., arrow keys, pgup/down work.
+gdb -tui execfile
+
+GNU GDB front-end
+DDD - DisplayDataDebugger.
+
+Commands
+help - get help.
+apropos keyword - for help on "keyword"
+quit/q - quit the program.
+return - last executed command.
+run/r <args list> - to start executing the program
+list sourcefile:foo - to bring about line foo in the sourcefile on the source window.
+(file exec) followed by run <arglist> - Loads exec and then runs it against arglist.
+
+
+-- Breakpoints.
+break main	Break at the beginning of the main() function
+break 5	Break at line 5 of the current file i.e line 5 will be the next to be executed.
+break hello.c:5	Break at line 5 of hello.c
+info breakpoints/i b - Get info about the breakpoints.
+enable breakpointnum - Not the line number, but the breakpoint number. {enb tab(y/n)}
+delete <breakpointnum1 bpn2 ..>
+clear pointname,lnum - delete a breakpoint by the line number, name etc.
+
+-- Stepping around
+next/n - Move to the next line.
+step/s - Step into a subroutine.
+continue/c - Go ahead until you encounter the next break point.
+    C-c to stop exec in the current place, get to a gdb prompt and then set breakpoints, the c debugging.
+
+-- Inspecting Variables.
+display/disp varname -- Displays the current value of variable, if in scope (useful during loops)
+info display - Get the displaynum for all the set variables.
+
+    (gdb) disp i
+    1: i = -1207447872
+    ^__ displaynum
+
+undisplay displaynumofvar
+print var - know the value one-of(one time)
+printf formatted_string vars - for formatted printing.
+    printf "%d\n", i
+
+-- Window
+ref - to refresh the GUI window, clears all the mess.
+
+-- Misc
+bt/backtrace - To look at the current stack trace.
+finish - Exit the current function and return to the caller.
+stepi - Step over a single asm instruction.Complete the until the end of the current function.
+advance func - advance from current location to func() call.
+jump loc - program control to loc. If you wanna stop here, set a breakpoint here.
+x/i $pc - extract instruction at PC
+
+-- Changing variables, values at runtime.
+    set (i = 20)
+    set variable i = 20 -- Can be used with jump to repeat sections of code without restarting.
+
+-- Hardware Watchpoints, look for the changes in the value an expression evaluates to.
+info watch
+watch var - watch var, watch a[10], watch *(p+10)
+rwatch - detect when the variable is read.
+awatch - detect when the variable is either read/written.
+
+-- Attaching to a running process.
+gdb
+attach pid
+
+-- Core dumped, SIGSEGV
+$gdb -c corefilepath
+This means that a core file (with a memory snapshot from the time of the crash) has been created with the name "core". If you're not getting a core file (that is, it only says "Segmentation fault" and no core file is created), you might have your ulimit set too low; try typing ulimit -c unlimited at your shell prompt.
+
+$gdb -tui -c core foo
+    If in TUI mode, you'll be greeted with a screen of information, telling you why the program exited ("signal 11, Segmentation fault"), and the highlight will be on the offending line. (In dumb terminal mode, the offending line is printed out.)

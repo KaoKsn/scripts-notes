@@ -262,7 +262,7 @@ install_essentials() {
     rm -rf ~/.config/nvim/.git
 
     echo "Setting up KDE Desktop"
-    pacman -S plasma-desktop dolphin firefox konsole okular mpv sddm 
+    pacman -S plasma-desktop dolphin firefox konsole okular mpv sddm kitty htop zoxide fzf lazygit
     systemctl enable sddm
 
     echo; unset choice

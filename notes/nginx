@@ -1,0 +1,222 @@
+NGINX - Reverse Proxy, Load Balancer, Web Server, Caching.
+    Documentation @(https://nginx.org/en/docs)
+
+Binary Installation (/usr/bin/nginx)
+    sudo pacman -S nginx
+    sudo apt install nginx
+
+As a SYSTEMD service
+    Unit file:
+        /usr/lib/systemd/system/nginx.service
+
+    systemctl (enable|disable|start|stop|restart|status) nginx
+
+    systemctl edit nginx.service
+        /etc/systemd/system/nginx.service.d/override.conf
+        # Allow 'x' restarts in an interval of 'y' sec before considering the service to have failed.
+        StartLimitBurst=x
+        StartLimitInterval=y
+        Restart=(on-failure|always)     # NOTE: Can cause start-limit-hit
+
+        systemctl reset-failed nginx.service
+
+sudo nginx
+sudo nginx -s (reload|stop|quit|reopen)
+
+Configuration files:
+    /etc/nginx/nginx.conf
+    /etc/nginx/sites-enabled/*
+    /etc/nginx/conf.d/*
+
+Log files:
+    /var/log/nginx/access.log
+
+PID file:    
+
+/run/nginx.pid - PID of the master process.
+
+Basic configuration:
+    Modules configured using directives. (/etc/nginx/modules.d/)
+
+    events {
+            worker_processes 1024;
+    }
+    http directive is a part of the `main` context.
+    http { # Context
+            types {
+                    text/html   html;
+                    text/css    css;
+            }
+            server { # Context
+                    listen port;
+                    server_name name; # Simple directive.
+
+                    location / { # Block directive
+                            root /usr/share/nginx/html;
+                            index index.html index.htm;
+                    }
+            }
+    }
+
+Setting NGINX as a proxy server.
+    http {
+            # Proxy @localhost port 80.
+            server {
+                    listen 80;
+                    server_name subdomain.domain.tld;
+                    # server_name localhost;
+                    # server_name git.kernel.org;
+
+                    location / {
+                            proxy_pass http://localhost:8080;
+                            # proxy_pass    protocol://fqdn:port;
+                    }
+                    location ~ \.(gif|png|jpg|bmp) {
+                            root /usr/share/nginx/images;
+                    }
+                    # Regex is always preceeded with a `~`
+            }
+
+            # Proxied server localhost:8080.
+            server {
+                    listen 8080;
+                    server_name localhost;
+
+                    root /usr/share/nginx/html;
+                    location / {
+                    }
+            }
+    }
+
+Other directives.
+    * Comments included *
+    http {
+            include /etc/nginx/mime.types;
+
+            include /etc/nginx/sites-enabled;
+
+            access_log  /var/log/nginx/access.log
+
+            location /dir404 {
+                alias path_to_dir_that_does_exist;
+                http://localhost:port/dir404; - serves index.html present in the path that is set as alias.
+            }
+
+            /usr/share/nginx
+                    - /usr/share/nginx/git
+                        - git.html
+                    - index.html
+            location /git {
+                root /usr/share/nginx;
+                try_files /git/git.html /index.html =404;
+            }
+    }
+
+    user username;
+
+Redirections and Rewrites
+
+    location /tothispath {
+            alias /usr/share/nginx/;
+    }
+    location /redirectthis {
+            return 307 /tothispath;
+    }
+        Now, http://localhost:80/redirectthis serves the index.html inside /usr/share/nginx/
+
+    Rewrites
+    rewrite ^/number/(\w+) /count/$1;
+    http://localhost/number/9 remains number/9 but you are redirected to the page in context /count/$1
+
+
+Autoindex and other options
+server {
+        listen 80;
+        server_name localhost;
+
+        # First try serving the request as a file, then as a directory
+        # If everything fails, return 404.
+        location / {
+                try_files $uri $uri/ =404;
+                autoindex on;
+                autoindex_format (html|json|xml|jsonp);
+                autoindex_localtime on;
+                autoindex_exact_size off;
+        }
+}
+
+# Default Server and Routing requests from 80 to 443.
+http {
+    server {
+            listen 80 default_server;
+            listen [::]:80 default_server;
+            http2 on;
+            server_name _;
+
+            location / {
+                    return 301 https://$host$request_uri;
+            }
+    }
+    server {
+            listen 443 ssl;
+            listen [::]:443;
+            http2 on;
+
+            server_name example.com home.example.com;
+            
+            ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+            ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+            # Security headers
+            add_header strict-transport-security 'max-age: 315360000; includesubdomains; preload' always;
+            add_header X-Content-Type-Options nosniff;
+            add_header Referrer-Policy "no-referrer-when-downgrade";
+            add_header X-Frame-Options SAMEORIGIN;
+
+            location / {
+                proxy_pass http://localhost:8080;
+            }
+    }
+}
+
+===========
+
+# Load Balancing
+http {
+    server {
+        listen 80;
+        server_name example.com www.example.com;
+        return 301 https://$host$request_uri;
+    }
+    server {
+        listen 443 ssl;
+        server_name example.com www.example.com;
+
+        ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+            proxy_pass http://streaming_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_connect_timeout 10s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 60s;
+            proxy_buffering on;
+        }
+    }
+    upstream streaming_service {
+        # Defaults to rr
+        least_conn;
+        server s1.example.com:80 max_fails=3 fail_timeout=30s;
+        server s2.example.com:80 max_fails=3 fail_timeout=30s;
+        keepalive 16;
+    }
+}
