@@ -50,6 +50,7 @@ alias st='speedtest-cli --secure'
 alias bthctl='bluetoothctl'
 alias valgrind='valgrind --track-origins=yes --leak-check=full -s'
 alias gdb='gdb -tui'
+alias lg='lazygit'
 
 help() {
     echo "Functions: "
@@ -131,8 +132,8 @@ git_branch() {
     if [ -z "$branch" ]; then
         return
     else
-        echo " {$branch}"
+        echo "(⦿─●─● $branch)"
     fi
 }
 
-PS1='[\u@\h] (\w)$(git_branch) \$ >> '
+PS1='\[\e[38;5;165m\][\u\[\e[38;5;171m\]@\[\e[38;5;213m\]\h] \[\e[38;5;219m\](\w) ($?) $(git_branch)\[\e[0m\]\n\$ '
