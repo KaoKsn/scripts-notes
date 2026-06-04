@@ -120,6 +120,7 @@ bat() {
 }
 
 set -o noclobber
+set -o vi
 
 if [ -f /usr/bin/nvim ]; then
     export EDITOR=/usr/bin/nvim
