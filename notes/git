@@ -1,3 +1,5 @@
+Blame, Biscet, Rebase, Merge, Cherry-pick
+
 git remote add origin <url> - origin is the remote repo name.
 
 git push origin -u master <add branch branch master to remote>
@@ -14,6 +16,8 @@ git pull remotename
 git remote set-url remotename <url>
 
 git branch -m oldname newname
+
+git commit --amend --no-edit -> Creates a new commit with the same msg, except adds the files in the staging area
 
 -- NOTES
 
@@ -74,8 +78,14 @@ git reset --hard commitish - Get back to a previous commit and remove uncommited
 
 Reflogs
 
+Track changes to .git/refs/head
 
 
+---------
+
+Blame (Get the list of everyone who has made changes to a particular line in the file)
+
+git blame file
 
 
 
@@ -86,3 +96,154 @@ Merge/ Rebase conflicts
 
     git checkout --theirs file - <accept their changes>
     git checkout --ours file - <Keep our changes>
+
+
+--------
+
+Squashing - combine all your tiny commits to a single one.
+
+We use an interactive rebase to squash commits since rebase can rewrite history.
+    (redo our things from a point of our choice)
+    (the commit goes from top to bottom, oldest to latest)
+p - pick, use this commit
+r - use this commit but rename the commit msg.
+s - squash, squash this commit.
+e
+
+git rebase -i HEAD~n; where n is the number of commits we need to squash into a single one.
+git rebase -i commitish; where commitish is the commit hash of the previous commit to the last commit to be squashed
+
+git checkout main; git switch -c feature;
+# create 5 random filenames and commit each separately
+for i in {1..5}; do
+  fname="$(tr -dc 'a-z0-9' </dev/urandom | head -c 8).txt"
+  echo "File $i: $fname" > "$fname"
+  git add "$fname"
+  git commit -m "Add $fname"
+done
+git rebase -i /refs/head/main
+
+
+------------
+
+Stashing.(DS: stack)
+    Both staged and unstaged changes(if they are being tracked) can be stashed.
+
+With Stash                              Without Stash
+
+git add .
+Stash your current changes              Stage your current changes.
+Pull the latest change                  Commit them.
+Pop the stash                           Pull the latest changes.
+Continue working                        Continue and finish your feature.
+Finish your feature                     Create another commit.
+                                        Squash all the commits.
+
+git stash
+    Output sample: Saved working directory and index state WIP on feature: b9f9a6e Done fixing header
+
+git stash list (stash@{n})
+git stash list -p (Show the changes that have been stashed)
+
+git stash show (Show all the files that have been stashed with +, - data)
+
+git stash pop - Apply and remove from the stash.
+git stash apply [stash@{n}] - Apply without removing the entry from the stash
+git stash drop [stash@{n}] - Don't apply, just remove from the stash
+
+
+----
+
+Reverts:
+    Safely move to a previous point without destroying commit history.
+    Useful when you want to role back changes pushed onto the public history.
+
+Creates a new commit that just reverses the changes done in the commit you mentioned.
+
+git revert commmit
+
+
+---
+
+Cherry picking - Get only some commits out of a branch not its complete history.
+
+Ensure a clean working tree (no uncommited changes)
+
+git checkout main
+git log --oneline feature (Get the commit hash that you like)
+git cherry-pick commitish
+
+git cherry-pick --continue
+git cherry-pick --abort
+
+
+----
+
+Bisect - Find a commit which introduced a change.
+    Most common use case: find when bugs were introduced or
+        find the commit that caused performance regressions.
+    (Binary search)
+
+git bisect log - log of what we are doing during the process.
+
+git bisect start
+git bisect good commitish
+git bisect bad commitish
+// git checkout's the commit in the middle // 
+git bisect good/bad - based on your tests (can cat the file)
+
+git bisect reset (Once the complete thing is done)
+
+git show commitish - To verify that the commit introduced the bug
+            |--> The commit hash that bisect returns.
+git revert commitish - To revert the changes that were done in the commit.
+
+
+automate the process through a script. (1 for bad, 0 for good)
+
+git bisect start
+git bisect bad commitish
+git bisect good commitish
+git bisect run pathtoscript args
+
+-------------
+
+Worktrees
+    (Can do anything but can't work on a branch that is being used by another worktree)
+
+.git/worktrees - Dir that helps the main worktree keep track of the others.
+
+git worktree list
+
+git worktree add path branchnm; branchnm is the name given to the branch that represents the linked worktree.
+
+git worktree remove wtname
+    OR
+rm -rf path; git worktree prune
+
+--------
+
+Tags (Immutable pointer to a commit)
+
+git tag -a v1.0 -m msg;
+git tag [list] -> List all the tags.
+
+git show v1.0
+git tag -d v1.0
+
+git push v1.0
+git push --delete v1.0
+
+    Semvers: vmajor.minor.patch
+                (breaking changes).(safe features).(safe bug fixes)
+            major version as typically not backwards compatible.
+
+--------
+
+Miscellaneous
+
+git log -p --oneline [branch] [-n]; n is the number of commits required.
+
+git show commitish; Files that participated, the diff and commit info.
+
+git cat-file -p commitish; Most amount of info.
