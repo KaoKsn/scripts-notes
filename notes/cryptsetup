@@ -1,0 +1,67 @@
+cryptsetup and LUKS(linux unified keysetup) - disk encryption specification.
+
+info:
+    prereq:
+        root previlages required.
+    description:
+        encrypt partitions and disks.
+    configuration files:
+        /etc/crypttab (Setting up decryption at boot-time) {none, key-slot}
+        /etc/cryptsetup-keys.d/ (General path for storing keyfiles)
+        /run/cryptsetup/
+    binary:
+        /usr/bin/cryptsetup
+    systemd-files:
+        cryptsetup.target
+        cryptsetup-pre.target
+
+device="/dev/nvme0n1p4"
+partition="/dev/nvme0n1p4"
+partition_uuid=$(sudo blkid partition -s UUID -o value).
+
+Encrypt a partition:
+    sudo cryptsetup luksFormat partition
+
+Opening a encrypted parition:
+    sudo cryptsetup luksOpen/open parition name; (cryptroot)
+
+Adding a keyfile:
+    sudo cryptsetup luksAddKey parition path_to_keyfile
+
+Information Dump of a partition:
+    sudo cryptsetup luksDump parition
+
+Close the encrypted partition:
+    sudo cryptsetup close partition
+
+Open an encrypted partition using a keyfile:
+    sudo cryptsetup open partition name --key-file filepath
+
+Open an encrypted partition with a key-slot:
+    sudo cryptsetup open partition name --key-slot slot-number
+
+Removing a key-slot:
+    sudo cryptsetup luksKillSlot partition slot-number
+
+misc:
+    Generating a keyfile (decryption at boot-time):
+        sudo dd if=/dev/urandom of=/etc/cryptsetup-keys.d/swap.key bs=512 count=1 status=progress
+        sudo chown root:root /etc/cryptsetup-keys.d/swap.key
+        sudo chmod 400 /etc/cryptsetup-keys.d/swap.key
+
+----
+
+crypttab configuration - configuration for encrypted block devices.
+     The  /etc/crypttab  file describes encrypted block devices that are set up
+     during system boot.
+
+    format:
+         volume-name encrypted-device key-file options
+
+vim /etc/crypttab:
+  crypt_swap UUID=partition_uuid pathToKeyfile none luks,key-slot=1,timeout=1m
+  crypt_home UUID=uuid none noauto,swap
+  crypt_ro UUID=uuid none readonly
+
+none/blank/- - checks for keyfile at /etc/cryptsetup-keys.d/crypt_home.key or /run/cryptsetup/crypt_home.key
+timeout - timeout for password query(0 i.e indefinite is the default, timeout in seconds)
