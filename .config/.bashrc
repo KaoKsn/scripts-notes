@@ -8,9 +8,10 @@
 HISTTIMEFORMAT="[%Y-%m-%d] [%T]  "
 # Don't record commands that start with a space.
 HISTCONTROL=ignoreboth
+HISTIGNORE='clear'
 
 # Core aliases
-alias gcc='/usr/bin/gcc -pedantic -Wall -Wextra -g -O2'
+alias gcc='/usr/bin/gcc -std=c11 -pedantic -Wall -Wextra -Wundef -Wshadow -Wconversion -g -O2'
 alias gp=g++
 alias grep='grep --color=auto'
 alias ls='ls --color=auto'
@@ -51,12 +52,15 @@ alias bthctl='bluetoothctl'
 alias valgrind='valgrind --track-origins=yes --leak-check=full -s'
 alias gdb='gdb -tui'
 alias lg='lazygit'
+alias hss='hugo server --noHTTPCache --disableFastRender'
 
 help() {
     echo "Functions: "
     echo -e "\tbcon 1/0 - Connect the first bluetooth device"
     echo -e "\tbat - Simple battery info into the terminal"
     echo -e "\tvol x - Set volume of the default sink to x%"
+    echo -e "\tignoreme langname - generate gitignore files for the lang"
+    echo -e "\tlicense name - generate LICENSE.md"
 
     echo -e "\nScripts (/usr/local/bin)"
     echo -e "\tcstart x - start charging when battery drops below x"
@@ -119,6 +123,24 @@ bat() {
     fi
 }
 
+# Pipe a license using the github api.
+license() {
+    if ! [ -z "$1" ]; then
+        curl https://api.github.com/licenses/"$1" | jq -r '.body' >$(pwd)/LICENSE.md
+    else
+        printf "Usage: license name.\nAvailable ones\n\t"
+        curl https://api.github.com/licenses | jq -r '.[].key'
+    fi
+}
+ignoreme() {
+    if ! [ -z "$1" ]; then
+        curl https://api.github.com/gitignore/templates/"$1" | jq -r '.source' >>$(pwd)/.gitignore
+    else
+        printf "Usage: ignoreme langname.\nAvailable ones\n"
+        curl https://api.github.com/gitignore/templates
+    fi
+}
+
 set -o noclobber
 set -o vi
 
@@ -138,3 +160,5 @@ git_branch() {
 }
 
 PS1='\[\e[38;5;165m\][\u\[\e[38;5;171m\]@\[\e[38;5;213m\]\h] \[\e[38;5;219m\](\w) ($?) $(git_branch)\[\e[0m\]\n\$ '
+
+export DOCKER_BUILDKIT=1
