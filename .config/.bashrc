@@ -18,6 +18,7 @@ alias ls='ls --color=auto'
 alias ll='ls -lFh'
 alias la='ls -Fah'
 alias lla='ls -lFah'
+alias curl='curl -sS'
 alias ncli='nmcli'
 alias ping='ping -c3 ping.archlinux.org'
 alias sl=ls
@@ -53,6 +54,7 @@ alias valgrind='valgrind --track-origins=yes --leak-check=full -s'
 alias gdb='gdb -tui'
 alias lg='lazygit'
 alias hss='hugo server --noHTTPCache --disableFastRender'
+alias docker=podman
 
 help() {
     echo "Functions: "
@@ -126,18 +128,24 @@ bat() {
 # Pipe a license using the github api.
 license() {
     if ! [ -z "$1" ]; then
-        curl https://api.github.com/licenses/"$1" | jq -r '.body' >$(pwd)/LICENSE.md
+        curl -sS https://api.github.com/licenses/"$1" | jq -r '.body' >LICENSE.md
+        year=$(date +%Y)
+        name=$(git config --get user.name 2>/dev/null || echo "fullname")
+        sed -i \
+            -e "s/\[year\]/$year/g" \
+            -e "s/\[fullname\]/$name/g" \
+            LICENSE.md
     else
-        printf "Usage: license name.\nAvailable ones\n\t"
-        curl https://api.github.com/licenses | jq -r '.[].key'
+        printf "Usage: license name.\nAvailable ones\n"
+        curl -sS https://api.github.com/licenses | jq -r '.[].key'
     fi
 }
 ignoreme() {
     if ! [ -z "$1" ]; then
-        curl https://api.github.com/gitignore/templates/"$1" | jq -r '.source' >>$(pwd)/.gitignore
+        curl -sS https://api.github.com/gitignore/templates/"$1" | jq -r '.source' >>$(pwd)/.gitignore
     else
         printf "Usage: ignoreme langname.\nAvailable ones\n"
-        curl https://api.github.com/gitignore/templates
+        curl -sS https://api.github.com/gitignore/templates
     fi
 }
 
