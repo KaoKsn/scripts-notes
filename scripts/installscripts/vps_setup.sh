@@ -1,6 +1,5 @@
 #!/usr/bin/bash
 
-#####NOTE: Add the bashrc file., install docker and containerd and add group docker
 ########### Confirmation ###############
 echo -e "Usage: $0 username hostname\n"
 read -p "Continue? [y/N]: " choice
@@ -102,6 +101,10 @@ fi
 if command -v systemctl 1>/dev/null 2>&1; then
     systemctl reload ssh 2>/dev/null || systemctl restart ssh
 fi
+
+#### User bashrc configuration
+git clone https://github.com/KaoKsn/scripts-notes.git
+cp scripts-notes/.config/.bashrc /home/"$1"/.bashrc
 
 ############ Final Reboot #######################
 printf "\n\nServer Setup Complete..\n"
