@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 
+#####NOTE: Add the bashrc file., install docker and containerd and add group docker
 ########### Confirmation ###############
 echo -e "Usage: $0 username hostname\n"
 read -p "Continue? [y/N]: " choice
@@ -13,7 +14,7 @@ apt update -y && apt dist-upgrade -y
 
 ########### Package Installation ###############
 printf "\n\nInstalling base packages....\n"
-apt install curl git build-essential ncdu tmux vim zoxide htop fzf -y
+apt install curl git build-essential ncdu tmux vim zoxide htop fzf tree trash-cli -y
 echo 'eval "$(zoxide init --cmd cd bash)' >>/root/.bashrc
 
 printf "\n\nSetting fail2ban...\n"
@@ -41,10 +42,11 @@ fi
 ########## User Setup ###################
 printf "\n\nSetting new user: $1...\n"
 if [ -n "$1" ]; then
-    useradd -m -G sudo "$1 -s bash"
+    useradd -m -G sudo "$1" -s bash
     passwd "$1"
     if [ "$?" -eq 0 ]; then
-        echo "Success."
+        echo "User was added with sudo privelages..."
+        echo -e "\e[32mSuccess.[0m"
     else
         echo "passwd exit status: $?"
     fi
