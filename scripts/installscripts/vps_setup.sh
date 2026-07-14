@@ -45,7 +45,7 @@ if [ -n "$1" ]; then
     while [ 1 ]; do
         if passwd "$1"; then
             echo "User was added with sudo privelages..."
-            echo -e "\e[32mSuccess.[0m"
+            echo -e "\e[32mSuccess.\e[0m"
             break
         fi
     done
