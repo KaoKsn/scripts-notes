@@ -41,14 +41,14 @@ fi
 ########## User Setup ###################
 printf "\n\nSetting new user: $1...\n"
 if [ -n "$1" ]; then
-    useradd -m -G sudo "$1" -s bash
-    passwd "$1"
-    if [ "$?" -eq 0 ]; then
-        echo "User was added with sudo privelages..."
-        echo -e "\e[32mSuccess.[0m"
-    else
-        echo "passwd exit status: $?"
-    fi
+    useradd -m -G sudo "$1"
+    while [ 1 ]; do
+        if passwd "$1"; then
+            echo "User was added with sudo privelages..."
+            echo -e "\e[32mSuccess.[0m"
+            break
+        fi
+    done
     echo 'eval "$(zoxide init --cmd cd bash)"' >>/home/"$1"/.bashrc
 else
     echo "No user added!"
