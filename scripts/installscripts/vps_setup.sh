@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -e
+
 ########### Confirmation ###############
 echo -e "Usage: $0 username hostname\n"
 read -p "Continue? [y/N]: " choice
@@ -9,7 +11,7 @@ fi
 
 ########### Update package repository index and install updates #################
 printf "\n\nUpdating....\n"
-apt update -y && apt dist-upgrade -y
+apt update -y && apt dist-upgrade -y && apt autoremove -y
 
 ########### Package Installation ###############
 printf "\n\nInstalling base packages....\n"
@@ -24,6 +26,7 @@ fi
 cp /etc/fail2ban/fail2ban.conf /etc/fail2ban.local
 cp /etc/fail2ban/jail.conf /etc/jail.local
 printf "Done. Config files:\n\t/etc/fail2ban/fail2ban.local\n\t/etc/fail2ban/jail.local\n"
+
 
 printf "\n\nCerbot installation...\n"
 apt install certbot -y
@@ -41,7 +44,7 @@ fi
 ########## User Setup ###################
 printf "\n\nSetting new user: $1...\n"
 if [ -n "$1" ]; then
-    useradd -m -G sudo "$1"
+    useradd -m -G sudo "$1" -s /usr/bin/bash
     while [ 1 ]; do
         if passwd "$1"; then
             echo "User was added with sudo privelages..."
@@ -67,40 +70,62 @@ printf "/etc/apt/apt.conf.d/unattended-upgrades\n"
 ########## SSH Configuration ############
 printf "\n\nConfiguring OpenSSH Server....\n"
 apt install openssh-server -y
-systemctl enable sshd 2>/dev/null || systemctl enable ssh
+
+if systemctl list-unit-files | grep -q '^sshd\.service'; then
+    ssh_service=sshd
+else
+    ssh_service=ssh
+systemctl enable --now "$ssh_service"
 
 sshconf=/etc/ssh/sshd_config
+backup=/etc/ssh/sshd_config.bak
 
-cp "$sshconf" /etc/ssh/sshd_config.bak
+cp -a "$sshconf" "$backup"
 
 tmp=$(mktemp)
-sed -e 's/^[[:space:]]*#*[[:space:]]*PermitRootLogin[[:space:]]\+.*/PermitRootLogin no/i' \
-    -e 's/^[[:space:]]*#*[[:space:]]*PasswordAuthentication[[:space:]]\+.*/PasswordAuthentication no/i' \
+sed -e 's/^[[:space:]]*#*[[:space:]]*PermitRootLogin[[:space:]]\+.*/PermitRootLogin no/I' \
+    -e 's/^[[:space:]]*#*[[:space:]]*PasswordAuthentication[[:space:]]\+.*/PasswordAuthentication no/I' \
     "$sshconf" >"$tmp"
-
-truncate -s 0 /etc/ssh/sshd_config.d/*
 
 chmod --reference="$sshconf" "$tmp" 2>/dev/null || true
 chown --reference="$sshconf" "$tmp" 2>/dev/null || true
+
 mv "$tmp" "$sshconf"
 
-echo "::: Important :::"
-printf "SSH key setup\n"
-printf "\t1. ssh-keygen -t ed25519 -C comment\n"
-printf "\t2. ssh-copy-id -i ~/.ssh/key.pub $1@ip\n"
-printf "\tConfirm ssh login works(you could possibly lock yourself out). **** Push to $1 ****\n"
+echo
+echo "================ IMPORTANT ================"
+echo "Before continuing, make sure SSH key login works."
+echo
+echo "1. Generate a key (if needed):"
+echo "   ssh-keygen -t ed25519 -C \"comment\""
+echo
+echo "2. Copy it to the server:"
+echo "   ssh-copy-id -i ~/.ssh/id_ed25519.pub $1@<server-ip>"
+echo
+echo "3. Test logging in with:"
+echo "   ssh $1@<server-ip>"
+echo
+echo "Only continue after confirming key authentication works."
+echo "==========================================="
+echo
 
-unset choice
-read -p "Continue? [YES to continue]: " choice
+read -r -p "Continue? [YES to continue]: " choice
 if [ "$choice" != 'YES' ]; then
-    echo "Aborting ssh configuration. Please proceed manually"
-    cp /etc/ssh/sshd_config.bak "$sshconf"
+    echo "Aborting ssh configuration and restoring previous version. Please proceed manually"
+    cp "$backup" "$sshconf"
     exit 1
 fi
 
-if command -v systemctl 1>/dev/null 2>&1; then
-    systemctl reload ssh 2>/dev/null || systemctl restart ssh
+if ! sshd -t; then
+    echo "ERROR: sshd configuration is invalid!"
+    echo "Restoring backup..."
+    cp -a "$backup" "$sshconf"
+    exit 1
 fi
+
+systemctl reload "$ssh_service" || systemctl restart "$ssh_service"
+echo "SSH configured to accept non-root users with public key Auth.."
+echo
 
 #### User bashrc configuration
 git clone https://github.com/KaoKsn/scripts-notes.git
