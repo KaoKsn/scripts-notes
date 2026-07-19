@@ -156,18 +156,26 @@ echo
 git clone https://github.com/KaoKsn/scripts-notes.git
 cp scripts-notes/.config/.bashrc /home/"$1"/.bashrc
 
-############ Final Reboot #######################
+# Setup Completion.
 printf "\n\nServer Setup Complete..\n"
 unset choice
 read -p "Reboot now? [y/N]: " choice
 if [ "$choice" != 'y' ] && [ "$choice" != 'Y' ]; then
-    echo "Further steps: "
-    printf "\t1. Lock your root account.\n"
-    printf "\t2. Install any other required packages.\n"
-    printf "\t3. Customize your jail.local and fail2ban.local files.\n"
-    printf "\t4. Setup firewall rules.\n"
-    printf "\t5. Customize your unattended-upgrades to automatically remove unused packages.\n"
-    printf "\t6. !! Reboot !! after.\n"
+    echo
+    echo " Setup complete!"
+    echo
+    echo "Recommended next steps:"
+    echo "  1. Lock the root account."
+    echo "  2. Install any additional required packages."
+    echo "  3. Review and customize:"
+    echo "     - /etc/fail2ban/jail.local"
+    echo "     - /etc/fail2ban/fail2ban.local"
+    echo "  4. Configure your firewall rules."
+    echo "  5. Review unattended-upgrades and enable automatic"
+    echo "     removal of unused packages if desired."
+    echo "  6. Reboot the system to ensure all changes take effect."
+    echo
+    echo "======================================================"
     exit 0
 fi
 echo "Rebooting..."
