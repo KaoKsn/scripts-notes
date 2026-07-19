@@ -27,6 +27,31 @@ cp /etc/fail2ban/fail2ban.conf /etc/fail2ban.local
 cp /etc/fail2ban/jail.conf /etc/jail.local
 printf "Done. Config files:\n\t/etc/fail2ban/fail2ban.local\n\t/etc/fail2ban/jail.local\n"
 
+printf "\n\nSetting ufw...\n"
+if apt install ufw -y; then
+    ufw default deny incoming
+    ufw default allow outgoing
+
+     if ufw app list | grep -q "SSH"; then
+        ufw allow SSH
+        ufw limit SSH
+    else
+        ufw allow 22/tcp
+        ufw limit 22/tcp
+    fi
+
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+
+    ufw --force enable
+
+    echo "ufw setup complete.."
+    ufw status verbose
+    echo
+else
+    echo "Failed setting up ufw."
+    exit 1
+fi
 
 printf "\n\nCerbot installation...\n"
 apt install certbot -y
