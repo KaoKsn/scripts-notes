@@ -16,7 +16,7 @@ apt update -y && apt dist-upgrade -y && apt autoremove -y
 ########### Package Installation ###############
 printf "\n\nInstalling base packages....\n"
 apt install curl git build-essential ncdu tmux vim zoxide htop fzf tree trash-cli -y
-echo 'eval "$(zoxide init --cmd cd bash)' >>/root/.bashrc
+echo 'eval "$(zoxide init --cmd cd bash)"' >>/root/.bashrc
 
 printf "\n\nSetting fail2ban...\n"
 apt install fail2ban -y
@@ -32,7 +32,7 @@ if apt install ufw -y; then
     ufw default deny incoming
     ufw default allow outgoing
 
-     if ufw app list | grep -q "SSH"; then
+    if ufw app list | grep -q "SSH"; then
         ufw allow SSH
         ufw limit SSH
     else
@@ -100,6 +100,7 @@ if systemctl list-unit-files | grep -q '^sshd\.service'; then
     ssh_service=sshd
 else
     ssh_service=ssh
+fi
 systemctl enable --now "$ssh_service"
 
 sshconf=/etc/ssh/sshd_config
@@ -141,7 +142,7 @@ if [ "$choice" != 'YES' ]; then
     exit 1
 fi
 
-if ! sshd -t; then
+if ! sudo sshd -t; then
     echo "ERROR: sshd configuration is invalid!"
     echo "Restoring backup..."
     cp -a "$backup" "$sshconf"
@@ -153,8 +154,15 @@ echo "SSH configured to accept non-root users with public key Auth.."
 echo
 
 #### User bashrc configuration
-git clone https://github.com/KaoKsn/scripts-notes.git
-cp scripts-notes/.config/.bashrc /home/"$1"/.bashrc
+git clone https://github.com/KaoKsn/scripts-notes.git || true
+yes | cp scripts-notes/.config/.bashrc /home/"$1"/.bashrc
+
+echo "Cleaning up.."
+echo "Removing unused packages..."
+sudo apt autoremove -y
+
+echo "Locking root account..."
+sudo passwd -l root
 
 # Setup Completion.
 printf "\n\nServer Setup Complete..\n"
@@ -178,5 +186,6 @@ if [ "$choice" != 'y' ] && [ "$choice" != 'Y' ]; then
     echo "======================================================"
     exit 0
 fi
+
 echo "Rebooting..."
 reboot now
